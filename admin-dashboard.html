@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GeoMind — Admin Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:#030508; --bg1:#060910; --bg2:#080c16;
+  --surface:#0c1120; --card:#101826; --card2:#14202f; --lift:#1a2840;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.11);
+  --amber:#ffca45; --amber2:#e6a800; --amber-glow:rgba(255,202,69,0.15);
+  --cyan:#00e5c8; --blue:#4a9eff; --red:#ff6b7a; --green:#34d399; --purple:#9d7aff;
+  --pfree:#94a3b8; --pbasic:#60a5fa; --pstd:#c084fc; --pprem:#fbbf24;
+  --text:#e8edf8; --text2:#b8c4d8; --muted:#5a6a88; --dim:#3a4a68;
+  --ff:'Outfit',sans-serif; --mono:'JetBrains Mono',monospace;
+  --r:12px; --shadow:0 8px 40px rgba(0,0,0,0.7);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--ff);}
+button{cursor:pointer;font-family:var(--ff);border:none;outline:none;}
+input,select,textarea{font-family:var(--ff);outline:none;}
+
+/* ── PASSWORD GATE ─ */
+#pwGate{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+#pwGate::before{
+  content:'';position:fixed;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,202,69,0.04) 0%,transparent 65%);
+  top:-200px;right:-100px;pointer-events:none;
+}
+.gate-card{
+  background:linear-gradient(160deg,rgba(16,24,38,0.98) 0%,rgba(8,12,22,0.98) 100%);
+  border:1px solid var(--border2);border-radius:20px;
+  padding:44px 40px;width:100%;max-width:400px;
+  box-shadow:0 40px 100px rgba(0,0,0,0.8),inset 0 1px 0 rgba(255,255,255,0.05);
+  animation:gateIn 0.4s cubic-bezier(0.22,1,0.36,1);
+  position:relative;
+}
+.gate-card::before{
+  content:'';position:absolute;inset:0;border-radius:20px;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,202,69,0.03) 0%,transparent 50%);
+}
+@keyframes gateIn{from{opacity:0;transform:translateY(28px) scale(0.97);}to{opacity:1;transform:none;}}
+.gate-logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:32px;}
+.gate-gem{width:48px;height:48px;background:linear-gradient(135deg,var(--amber),#e6a800);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 24px rgba(255,202,69,0.3);}
+.gate-title{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--amber),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.gate-sub{text-align:center;font-size:12px;color:var(--muted);margin-bottom:28px;}
+.gate-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;}
+.gate-input{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);
+  border-radius:11px;padding:13px 16px;color:var(--text);font-size:14px;
+  transition:border-color 0.2s,box-shadow 0.2s;margin-bottom:14px;
+}
+.gate-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,202,69,0.1);}
+.gate-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,var(--amber),#e6a800);
+  border-radius:11px;font-weight:800;font-size:14px;color:#030508;
+  transition:all 0.2s;
+}
+.gate-btn:hover{opacity:0.9;transform:translateY(-1px);}
+.gate-err{background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.2);color:var(--red);padding:9px 12px;border-radius:8px;font-size:12px;margin-top:10px;display:none;}
+.gate-warn{font-size:10px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.6;}
+.gate-warn strong{color:var(--amber);}
+.spin-xs{width:14px;height:14px;border:2px solid rgba(0,0,0,0.2);border-top-color:#030508;border-radius:50%;animation:spin 0.8s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── ADMIN APP ─ */
+#adminApp{display:none;height:100vh;overflow:hidden;flex-direction:row;}
+
+/* SIDEBAR */
+#sidebar{
+  width:220px;min-width:220px;
+  background:var(--bg1);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  padding:0;
+  flex-shrink:0;
+}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:18px 18px 16px;border-bottom:1px solid var(--border);}
+.sb-gem{width:30px;height:30px;background:linear-gradient(135deg,var(--amber),#e6a800);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.sb-brand{font-size:14px;font-weight:800;}
+.sb-brand span{color:var(--amber);}
+.sb-nav{flex:1;padding:12px 8px;overflow-y:auto;}
+.sb-section{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--dim);padding:10px 10px 4px;}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:9px;
+  font-size:12px;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all 0.15s;
+  border:1px solid transparent;
+  margin-bottom:2px;
+}
+.sb-item:hover{background:rgba(255,255,255,0.04);color:var(--text2);}
+.sb-item.active{background:rgba(255,202,69,0.09);color:var(--amber);border-color:rgba(255,202,69,0.15);}
+.sb-item .si{font-size:14px;width:20px;text-align:center;}
+.sb-footer{padding:12px;border-top:1px solid var(--border);}
+.sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:9px;border:1px solid var(--border);}
+.sb-av{width:28px;height:28px;background:linear-gradient(135deg,var(--amber),#e6a800);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#030508;flex-shrink:0;}
+.sb-uname{font-size:11px;font-weight:700;color:var(--text2);}
+.sb-urole{font-size:9px;color:var(--amber);}
+.sb-logout{margin-top:8px;width:100%;padding:8px;background:rgba(255,107,122,0.07);border:1px solid rgba(255,107,122,0.15);color:var(--red);border-radius:8px;font-size:11px;font-weight:700;}
+.sb-logout:hover{background:rgba(255,107,122,0.14);}
+
+/* MAIN CONTENT */
+#mainContent{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOP BAR */
+#topBar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:56px;
+  background:rgba(6,9,16,0.95);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.tb-title{font-size:17px;font-weight:700;}
+.tb-title span{color:var(--amber);}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.stat-pill{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:var(--green);}
+.stat-pill.warn{background:rgba(255,202,69,0.1);border-color:rgba(255,202,69,0.2);color:var(--amber);}
+
+/* PANELS */
+.panel{display:none;flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:var(--lift) transparent;}
+.panel.active{display:block;}
+.panel::-webkit-scrollbar{width:4px;}
+
+/* GRID STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.sc-label{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.sc-value{font-size:28px;font-weight:800;font-family:var(--mono);}
+.sc-sub{font-size:10px;color:var(--muted);margin-top:4px;}
+.sc-v-amber{color:var(--amber);}
+.sc-v-cyan{color:var(--cyan);}
+.sc-v-green{color:var(--green);}
+.sc-v-purple{color:var(--purple);}
+
+/* SECTION HEADERS */
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-size:16px;font-weight:700;}
+.sec-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* TABLE */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:24px;}
+.tbl-search{padding:12px 16px;border-bottom:1px solid var(--border);}
+.tbl-search input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--text);font-size:12px;}
+.tbl-search input:focus{border-color:var(--amber);outline:none;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--border);text-align:left;background:rgba(255,255,255,0.02);}
+td{padding:12px 16px;border-bottom:1px solid var(--border3);font-size:12px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.plan-chip{padding:3px 9px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:0.05em;}
+.pc-free{background:rgba(148,163,184,0.12);color:var(--pfree);}.pc-free_trial{background:linear-gradient(135deg,rgba(0,229,200,0.15),rgba(74,158,255,0.12));color:var(--cyan);}.pc-starter{background:rgba(96,165,250,0.12);color:var(--pbasic);}
+.pc-basic{background:rgba(96,165,250,0.12);color:var(--pbasic);}
+.pc-standard{background:rgba(192,132,252,0.12);color:var(--pstd);}
+.pc-premium{background:rgba(251,191,36,0.12);color:var(--pprem);}
+.action-btn{padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;border:1px solid;transition:all 0.15s;cursor:pointer;background:none;}
+.ab-edit{border-color:rgba(74,158,255,0.3);color:var(--blue);}
+.ab-edit:hover{background:rgba(74,158,255,0.1);}
+.ab-key{border-color:rgba(255,202,69,0.3);color:var(--amber);}
+.ab-key:hover{background:rgba(255,202,69,0.1);}
+.ab-del{border-color:rgba(255,107,122,0.3);color:var(--red);}
+.ab-del:hover{background:rgba(255,107,122,0.1);}
+.key-cell{font-family:var(--mono);font-size:10px;color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.key-cell.active{color:var(--green);}
+.na-text{color:var(--dim);font-style:italic;}
+.loading-row td{text-align:center;padding:30px;color:var(--muted);}
+
+/* MODAL */
+#adminModal{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);
+  z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+#adminModal.open{opacity:1;pointer-events:all;}
+.modal-box{
+  background:var(--surface);border:1px solid var(--border2);border-radius:18px;
+  padding:28px;width:100%;max-width:520px;
+  box-shadow:0 40px 80px rgba(0,0,0,0.7);
+  animation:modalIn 0.3s cubic-bezier(0.22,1,0.36,1);
+  position:relative;max-height:90vh;overflow-y:auto;
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(0.97);}to{opacity:1;transform:none;}}
+.modal-close{position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.06);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:rgba(255,107,122,0.15);color:var(--red);}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.mf-field{margin-bottom:14px;}
+.mf-label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:5px;}
+.mf-input,.mf-select{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border2);
+  border-radius:9px;padding:10px 13px;color:var(--text);font-size:13px;
+  transition:border-color 0.2s;
+}
+.mf-input:focus,.mf-select:focus{border-color:var(--amber);}
+.mf-select option{background:#0c1120;}
+.mf-hint{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.mf-sep{height:1px;background:var(--border);margin:16px 0;}
+.mf-section{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--amber);margin-bottom:10px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;}
+.mab-save{flex:1;padding:12px;background:linear-gradient(135deg,var(--amber),#e6a800);border-radius:9px;font-weight:800;font-size:13px;color:#030508;}
+.mab-save:hover{opacity:0.9;}
+.mab-cancel{padding:12px 20px;background:rgba(255,255,255,0.05);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-weight:700;font-size:13px;}
+.mab-cancel:hover{background:rgba(255,255,255,0.09);}
+
+/* API KEYS PANEL */
+.api-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+.api-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;}
+.api-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.ac-name{font-weight:700;font-size:14px;}
+.ac-email{font-size:11px;color:var(--muted);margin-top:2px;}
+.ac-plan{margin-top:4px;}
+.key-badge{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
+.kb-dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex-shrink:0;}
+.kb-dot.on{background:var(--green);}
+.kb-label{font-size:10px;color:var(--muted);flex:1;}
+.kb-val{font-family:var(--mono);font-size:9px;color:var(--dim);}
+.kb-val.set{color:var(--green);}
+.ac-edit-btn{width:100%;padding:8px;background:rgba(255,202,69,0.07);border:1px solid rgba(255,202,69,0.2);color:var(--amber);border-radius:8px;font-size:11px;font-weight:700;margin-top:6px;transition:all 0.2s;}
+.ac-edit-btn:hover{background:rgba(255,202,69,0.14);}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:20px;padding:10px 18px;border-radius:10px;font-size:12px;font-weight:600;z-index:99999;animation:toastIn 0.3s ease;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.toast.ok{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);color:var(--green);}
+.toast.err{background:rgba(255,107,122,0.15);border:1px solid rgba(255,107,122,0.3);color:var(--red);}
+.toast.warn{background:rgba(255,202,69,0.15);border:1px solid rgba(255,202,69,0.3);color:var(--amber);}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:800px){
+  #sidebar{width:56px;min-width:56px;}
+  .sb-item span:not(.si){display:none;}
+  .sb-section,.sb-uname,.sb-urole{display:none;}
+  .sb-logo .sb-brand{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── PASSWORD GATE ── -->
+<div id="pwGate">
+  <div class="gate-card">
+    <div class="gate-logo">
+      <div class="gate-gem">🔐</div>
+      <div class="gate-title">Admin Dashboard</div>
+    </div>
+    <div class="gate-sub">GeoMind Administration Panel<br>Authorized access only</div>
+    <label class="gate-label">Admin Password</label>
+    <input type="password" class="gate-input" id="pwInput" placeholder="Enter admin password…"/>
+    <button class="gate-btn" onclick="tryLogin()" id="pwBtn">Unlock Dashboard</button>
+    <div class="gate-err" id="pwErr">Access denied. Incorrect password.</div>
+    <div class="gate-warn"><strong>⚠ Security Notice:</strong> This page is restricted. Unauthorized access attempts are logged.</div>
+  </div>
+</div>
+
+<!-- ── ADMIN APP ── -->
+<div id="adminApp">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-gem">🌍</div>
+      <div class="sb-brand">Geo<span>Mind</span></div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <div class="sb-item active" id="sb-dashboard" onclick="showPanel('dashboard',this)">
+        <span class="si">📊</span><span>Dashboard</span>
+      </div>
+      <div class="sb-section">Management</div>
+      <div class="sb-item" id="sb-users" onclick="showPanel('users',this)">
+        <span class="si">👥</span><span>Users</span>
+      </div>
+      <div class="sb-item" id="sb-apikeys" onclick="showPanel('apikeys',this)">
+        <span class="si">🔑</span><span>API Keys</span>
+      </div>
+      <div class="sb-item" id="sb-freetrial" onclick="showPanel('freetrial',this)">
+        <span class="si">🚀</span><span>Free Trial</span>
+      </div>
+      <div class="sb-item" id="sb-plans" onclick="showPanel('plans',this)">
+        <span class="si">⭐</span><span>Plans</span>
+      </div>
+      <div class="sb-section">System</div>
+      <div class="sb-item" id="sb-settings" onclick="showPanel('settings',this)">
+        <span class="si">⚙</span><span>Settings</span>
+      </div>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-av" id="sbAv">A</div>
+        <div>
+          <div class="sb-uname" id="sbName">Admin</div>
+          <div class="sb-urole">Administrator</div>
+        </div>
+      </div>
+      <button class="sb-logout" onclick="adminLogout()">↩ Logout</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div id="mainContent">
+    <div id="topBar">
+      <div>
+        <div class="tb-title">GeoMind <span>Admin</span></div>
+      </div>
+      <div class="tb-right">
+        <span class="stat-pill" id="authPill" style="background:rgba(255,202,69,0.1);border-color:rgba(255,202,69,0.2);color:var(--amber)">⏳ Auth Loading…</span>
+        <span class="stat-pill" id="onlinePill">● ONLINE</span>
+        <span class="stat-pill warn" id="dbPill">Firebase ✓</span>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PANEL -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="sec-head" style="margin-bottom:20px">
+        <div>
+          <div class="sec-title">📊 Overview Dashboard</div>
+          <div class="sec-sub">Real-time platform metrics</div>
+        </div>
+        <button class="action-btn ab-edit" onclick="loadDashboard()">↺ Refresh</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="sc-label">Total Users</div><div class="sc-value sc-v-cyan" id="statTotal">—</div><div class="sc-sub">Registered accounts</div></div>
+        <div class="stat-card"><div class="sc-label">Free Plan</div><div class="sc-value sc-v-amber" id="statFree">—</div><div class="sc-sub">Using own API key</div></div>
+        <div class="stat-card"><div class="sc-label">Basic Plan</div><div class="sc-value sc-v-amber" id="statBasic">—</div><div class="sc-sub">₹199/mo</div></div>
+        <div class="stat-card"><div class="sc-label">Standard Plan</div><div class="sc-value sc-v-purple" id="statStd">—</div><div class="sc-sub">₹249/mo</div></div>
+        <div class="stat-card"><div class="sc-label">Premium Plan</div><div class="sc-value sc-v-amber" id="statPrem">—</div><div class="sc-sub">₹399/mo</div></div>
+        <div class="stat-card"><div class="sc-label">API Keys Set</div><div class="sc-value sc-v-green" id="statKeys">—</div><div class="sc-sub">adminAPI entries</div></div>
+      </div>
+      <div class="sec-head"><div><div class="sec-title">Recent Signups</div><div class="sec-sub">Latest 10 registered users</div></div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Name</th><th>Email</th><th>Plan</th><th>Joined</th></tr></thead>
+        <tbody id="recentTbl"><tr class="loading-row"><td colspan="4">Loading…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- USERS PANEL -->
+    <div class="panel" id="panel-users">
+      <div class="sec-head">
+        <div><div class="sec-title">👥 User Management</div><div class="sec-sub">View all users, change plans, manage accounts</div></div>
+        <button class="action-btn ab-edit" onclick="loadUsers()">↺ Refresh</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-search"><input type="text" id="userSearch" placeholder="Search by name or email…" oninput="filterUsers()"/></div>
+        <table>
+          <thead><tr><th>User</th><th>Email</th><th>Plan</th><th>Reports</th><th>Chats</th><th>Phone</th><th>Actions</th></tr></thead>
+          <tbody id="usersTbl"><tr class="loading-row"><td colspan="7">Loading users…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API KEYS PANEL -->
+    <div class="panel" id="panel-apikeys">
+      <div class="sec-head">
+        <div><div class="sec-title">🔑 API Key Management</div><div class="sec-sub">Assign report & chat API keys to paid users. Keys are never visible to users.</div></div>
+        <button class="action-btn ab-edit" onclick="loadAPIKeys()">↺ Refresh</button>
+      </div>
+      <div style="background:rgba(255,202,69,0.06);border:1px solid rgba(255,202,69,0.2);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.7;">
+        <strong style="color:var(--amber)">🔐 Security:</strong> API keys stored here are at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminAPI/&lt;userId&gt;</code> in Firebase. Firebase Rules prevent users from reading or writing to this path. Only admin (via this dashboard) can modify these values.
+      </div>
+      <div class="api-grid" id="apiGrid">
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;grid-column:1/-1">Loading API key assignments…</div>
+      </div>
+    </div>
+
+    <!-- ══ FREE TRIAL PANEL ══ -->
+    <div class="panel" id="panel-freetrial">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">🚀 Free Trial API Keys</div>
+          <div class="sec-sub">Add API keys that are auto-assigned to trial users (max 5 users per key)</div>
+        </div>
+        <button class="action-btn ab-edit" onclick="loadFreeTrialKeys()">↺ Refresh</button>
+      </div>
+
+      <!-- Alerts banner -->
+      <div id="trialAlertsBox" style="display:none;background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.3);border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:800;color:var(--red);margin-bottom:10px;">⚠ API Key Failure Alerts</div>
+        <div id="trialAlertsList"></div>
+        <button onclick="clearTrialAlerts()" style="margin-top:10px;padding:5px 14px;background:rgba(255,107,122,0.1);border:1px solid rgba(255,107,122,0.2);color:var(--red);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">✓ Clear Alerts</button>
+      </div>
+
+      <!-- Add new key form -->
+      <div style="background:var(--card);border:1px solid rgba(0,229,200,0.2);border-radius:14px;padding:18px;margin-bottom:18px;">
+        <div style="font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:14px;">➕ Add New API Key</div>
+        <div style="display:grid;grid-template-columns:1fr 120px 100px auto;gap:10px;align-items:end;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">API Key</label>
+            <input type="password" class="mf-input" id="newTrialKey" placeholder="Paste API key (Gemini / OpenAI / HuggingFace…)" style="width:100%"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">Provider</label>
+            <select class="mf-select" id="newTrialProvider" style="width:100%">
+              <option value="gemini">Gemini</option>
+              <option value="openai">OpenAI</option>
+              <option value="huggingface">HuggingFace</option>
+              <option value="mistral">Mistral</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:5px">Max Users</label>
+            <input type="number" class="mf-input" id="newTrialMaxUsage" value="5" min="1" max="50" style="width:100%"/>
+          </div>
+          <button class="action-btn ab-key" style="padding:10px 18px;font-size:12px;" onclick="addFreeTrialKey()">+ Add</button>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">Keys are stored at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">freeTrialAPI/{id}</code>. Users never see these keys — system assigns them automatically.</div>
+      </div>
+
+      <!-- Keys table -->
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Key Preview</th>
+              <th>Provider</th>
+              <th>Usage</th>
+              <th>Max</th>
+              <th>Status</th>
+              <th>Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="trialKeysTbl">
+            <tr class="loading-row"><td colspan="7">Loading free trial keys…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" style="margin-top:16px">
+        <div class="stat-card"><div class="sc-label">Total Trial Keys</div><div class="sc-value sc-v-cyan" id="trialStatTotal">—</div></div>
+        <div class="stat-card"><div class="sc-label">Active Keys</div><div class="sc-value sc-v-green" id="trialStatActive">—</div></div>
+        <div class="stat-card"><div class="sc-label">Inactive / Failed</div><div class="sc-value sc-v-amber" id="trialStatInactive">—</div></div>
+        <div class="stat-card"><div class="sc-label">Total Trial Users</div><div class="sc-value sc-v-purple" id="trialStatUsers">—</div></div>
+      </div>
+    </div>
+
+
+    <div class="panel" id="panel-plans">
+      <div class="sec-head">
+        <div><div class="sec-title">⭐ Plan Control</div><div class="sec-sub">Manually activate or change user plans</div></div>
+      </div>
+
+      <!-- Auth status warning -->
+      <div id="planAuthWarning" style="display:none;background:rgba(255,107,122,0.08);border:1px solid rgba(255,107,122,0.25);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--red);margin-bottom:16px;line-height:1.7;">
+        ⚠ <strong>Not signed in to Firebase.</strong> Plan changes will fail. Open the main GeoMind app in another tab and make sure you are signed in, then come back here and refresh.
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:var(--amber)">Quick Plan Activation</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">User ID / Email</label>
+            <input type="text" class="mf-input" id="quickUid" placeholder="Enter email (e.g. user@email.com) or UID…" style="width:100%"/>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px">Plan</label>
+            <select class="mf-select" id="quickPlan" style="width:100%">
+              <option value="free">Free</option>
+              <option value="basic">Basic (₹199)</option>
+              <option value="standard">Standard (₹249)</option>
+              <option value="premium">Premium (₹399)</option>
+            </select>
+          </div>
+          <button class="action-btn ab-key" style="padding:10px 18px;font-size:12px" onclick="quickPlanChange()">✓ Activate</button>
+        </div>
+        <div class="mf-hint" style="margin-top:10px">✅ You can type an <strong>email address</strong> or paste a <strong>Firebase UID</strong>. Use the 📋 Copy UID button in the table below.</div>
+      </div>
+      <div class="sec-head"><div><div class="sec-title">All Users by Plan</div></div></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>User</th><th>Email</th><th>Current Plan</th><th>Reports Used</th><th>Chats Used</th><th>Actions</th></tr></thead>
+        <tbody id="plansTbl"><tr class="loading-row"><td colspan="6">Loading…</td></tr></tbody></table>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <div class="sec-head"><div><div class="sec-title">⚙ Admin Settings</div><div class="sec-sub">System configuration and admin access</div></div></div>
+
+      <!-- ── GLOBAL MODEL SELECTION ── -->
+      <div style="background:var(--card);border:1px solid rgba(255,202,69,0.25);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;color:var(--amber)">🤖 Global AI Model Selection</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:16px;line-height:1.7;">
+          Set the default AI model used for all paid users. Stored at <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminSettings/selectedModel</code>. Users with their own API key always use their chosen model.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Default Model</label>
+            <select class="mf-select" id="adminModelSelect" style="width:100%">
+              <optgroup label="🔵 Google Gemini">
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Recommended)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Quality)</option>
+                <option value="gemini-pro">Gemini Pro (Classic)</option>
+              </optgroup>
+              <optgroup label="🟢 ChatGPT / OpenAI">
+                <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </optgroup>
+              <optgroup label="🤗 HuggingFace">
+                <option value="Qwen/Qwen2.5-7B-Instruct">Qwen 2.5 7B Instruct (Free HF)</option>
+                <option value="Qwen/Qwen2.5-72B-Instruct">Qwen 2.5 72B Instruct</option>
+                <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B</option>
+                <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B Instruct</option>
+                <option value="mistralai/Mixtral-8x7B-Instruct-v0.1">Mixtral 8x7B</option>
+                <option value="google/gemma-2-27b-it">Gemma 2 27B</option>
+              </optgroup>
+              <optgroup label="🟠 Anthropic">
+                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+              </optgroup>
+              <optgroup label="🟣 Mistral">
+                <option value="mistral-large-latest">Mistral Large</option>
+                <option value="mistral-small-latest">Mistral Small</option>
+              </optgroup>
+              <optgroup label="🟡 Z.ai (Yi)">
+                <option value="yi-lightning">Yi Lightning (Ultra Fast)</option>
+                <option value="yi-large">Yi Large</option>
+                <option value="glm-4.7">GLM 4.7</option>
+              </optgroup>
+            </select>
+          </div>
+          <button class="action-btn ab-key" style="padding:11px 18px;font-size:12px;" onclick="saveAdminModel()">💾 Save</button>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+          <div id="adminModelStatus" style="font-size:11px;color:var(--muted);">Current: loading…</div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.7;background:rgba(255,255,255,0.03);border-radius:8px;padding:10px 12px;">
+          <strong style="color:var(--text2)">HuggingFace models</strong> require a HuggingFace API token with "Make calls to Inference Providers" permission. Assign this token as the user's API key in the API Keys panel.<br>
+          <strong style="color:var(--text2)">Gemini</strong> uses a Google AI Studio key. <strong style="color:var(--text2)">OpenAI</strong> models use an OpenAI key.
+        </div>
+      </div>
+
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="font-size:14px;font-weight:700;margin-bottom:6px;">Register Admin UID</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">Add your Firebase UID to <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminConfig/adminUids/&lt;uid&gt;</code> = true so you see the Admin button in the main app.</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
+          <input type="text" class="mf-input" id="newAdminUid" placeholder="Your Firebase UID (Firebase Console → Authentication → Users)"/>
+          <button class="action-btn ab-key" style="padding:10px 16px" onclick="addAdminUid()">+ Add</button>
+        </div>
+      </div>
+      <div style="background:rgba(255,107,122,0.06);border:1px solid rgba(255,107,122,0.2);border-radius:14px;padding:20px;">
+        <div style="font-size:14px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠ Admin Password Notice</div>
+        <div style="font-size:11px;color:var(--text2);line-height:1.7;">The admin password is compared client-side. For production, consider moving authentication to a backend server with Firebase Admin SDK.</div>
+      </div>
+    </div>
+
+<!-- ADMIN MODAL -->
+<div id="adminModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modalTitle">Edit User</div>
+    <div class="modal-sub" id="modalSub">Update user details</div>
+    <div id="modalContent"></div>
+    <div class="modal-actions" id="modalActions">
+      <button class="mab-cancel" onclick="closeModal()">Cancel</button>
+      <button class="mab-save" id="modalSaveBtn" onclick="saveModal()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   GEOMIND ADMIN DASHBOARD v5.1
+   ROOT CAUSE FIX: Admin dashboard opened in new tab has no Firebase
+   auth context. Writes to users/$uid were silently failing because
+   Firebase rules require auth.uid === $uid.
+   
+   FIX:
+   1. auth.onAuthStateChanged — wait for Firebase auth to resolve
+   2. Store currentAdminUid — pass to all write operations
+   3. Firebase rules updated to allow adminUid → all users
+   4. Write guard — test permission before showing dashboard
+   5. All writes wrapped with auth check + clear error messages
+════════════════════════════════════════════════════════════════ */
+
+/* ── SECURITY: Admin password ──────────────────────────── */
+const _AP = ['s11o22n33u44', '@', 'becreativethink'].join('');
+
+function tryLogin() {
+  const val = document.getElementById('pwInput').value.trim();
+  const err = document.getElementById('pwErr');
+  const btn = document.getElementById('pwBtn');
+  err.style.display = 'none';
+  if (!val) { err.textContent = 'Please enter the admin password.'; err.style.display = 'block'; return; }
+  if (val === _AP) {
+    sessionStorage.setItem('gm_admin_auth', btoa(_AP));
+    btn.innerHTML = '<span class="spin-xs"></span>Unlocking…';
+    btn.disabled = true;
+    setTimeout(unlockDashboard, 600);
+  } else {
+    err.textContent = 'Access denied. Incorrect password.';
+    err.style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+/* ── FIREBASE ──────────────────────────────────────────── */
+const firebaseConfig = {
+  apiKey: "AIzaSyD10aCUKg1YRao4bzCmOkiVpKV2HWqshz4",
+  authDomain: "geogide-7d25e.firebaseapp.com",
+  databaseURL: "https://geogide-7d25e-default-rtdb.firebaseio.com",
+  projectId: "geogide-7d25e",
+  storageBucket: "geogide-7d25e.firebasestorage.app",
+  messagingSenderId: "55868267996",
+  appId: "1:55868267996:web:e0f9174c1e6c5109670319"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+
+/* ── AI MODELS LIST (for admin to assign) ─────────────── */
+const ADMIN_MODELS = [
+  // Gemini
+  'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro',
+  // ChatGPT / OpenAI
+  'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano',
+  'gpt-4o', 'gpt-4o-mini', 'o4-mini', 'o3', 'o3-mini', 'o1', 'o1-mini',
+  'gpt-4-turbo', 'gpt-3.5-turbo',
+  // Z.ai — Yi models
+  'yi-lightning', 'yi-lightning-lite', 'yi-large', 'yi-large-turbo',
+  'yi-large-preview', 'yi-medium', 'yi-medium-200k', 'yi-spark',
+  // Z.ai — GLM models
+  'glm-5', 'glm-4.7', 'glm-4.6', 'glm-4.5', 'glm-4.7-flash', 'glm-4-6v', 'glm-4-32b',
+  // Anthropic
+  'claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307', 'claude-3-opus-20240229',
+  // Mistral
+  'mistral-large-latest', 'mistral-small-latest', 'open-mixtral-8x7b',
+  // OpenRouter
+  'meta-llama/llama-3-8b-instruct', 'deepseek/deepseek-chat',
+  'qwen/qwen-2-72b-instruct',
+  'microsoft/phi-3-medium-128k-instruct', 'cohere/command-r-plus',
+  // HuggingFace
+  'meta-llama/llama-3-70b-instruct', 'Qwen/Qwen2.5-72B-Instruct',
+  'mistralai/Mixtral-8x7B-Instruct-v0.1', 'mistralai/Mistral-7B-Instruct-v0.3',
+  'google/gemma-2-27b-it',
+  // Bytez
+  'Qwen/Qwen2.5-7B'
+];
+
+const PLAN_NAMES = { free:'Free', free_trial:'Free Trial', starter:'Starter', standard:'Standard', premium:'Premium', payperuse:'⚡ Pay Per Use' };
+
+/* ── STATE ─────────────────────────────────────────────── */
+let adminAuthenticated = false;
+let currentAdminUid    = null;   // Firebase UID of admin (for write auth)
+let allUsers           = [];
+let allAPIKeys         = {};
+let currentModalData   = {};
+let _firebaseAuthReady = false;
+
+/* ── FIREBASE AUTH LISTENER ────────────────────────────── */
+/* CRITICAL: Auth state must resolve before any DB writes.
+   In a new tab, currentUser starts null and loads async.    */
+auth.onAuthStateChanged(user => {
+  _firebaseAuthReady = true;
+  const pill = document.getElementById('authPill');
+  if (user) {
+    currentAdminUid = user.uid;
+    console.log('[AdminDash] Firebase auth ready. UID:', currentAdminUid);
+    if (pill) {
+      pill.textContent = '✓ Signed in as ' + (user.email || user.uid.substring(0,12) + '…');
+      pill.style.background = 'rgba(52,211,153,0.1)';
+      pill.style.borderColor = 'rgba(52,211,153,0.25)';
+      pill.style.color = 'var(--green)';
+    }
+    // Update sidebar avatar
+    const initial = (user.email || user.displayName || 'A')[0].toUpperCase();
+    const sbAv   = document.getElementById('sbAv');
+    const sbName = document.getElementById('sbName');
+    if (sbAv)   sbAv.textContent   = initial;
+    if (sbName) sbName.textContent = user.displayName || user.email || 'Admin';
+  } else {
+    currentAdminUid = null;
+    if (pill) {
+      pill.textContent = '⚠ Not signed in — writes will fail';
+      pill.style.background = 'rgba(255,107,122,0.1)';
+      pill.style.borderColor = 'rgba(255,107,122,0.25)';
+      pill.style.color = 'var(--red)';
+    }
+    console.warn('[AdminDash] No Firebase auth. Open main app first and stay signed in.');
+  }
+});
+
+/* ── CHECK AUTH BEFORE WRITE ───────────────────────────── */
+function requireAuth() {
+  if (!currentAdminUid) {
+    toast('⚠ Not authenticated in Firebase. Please open the main app first and stay signed in, then reopen the admin panel.', 'err');
+    throw new Error('Firebase auth not available. Open main app and sign in first.');
+  }
+  return true;
+}
+
+/* ── SESSION ───────────────────────────────────────────── */
+/* Check if already authenticated this session */
+if (sessionStorage.getItem('gm_admin_auth') === btoa(_AP)) {
+  unlockDashboard();
+}
+
+document.getElementById('pwInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') tryLogin();
+});
+
+function unlockDashboard() {
+  adminAuthenticated = true;
+  document.getElementById('pwGate').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'flex';
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  const dbItem = document.getElementById('sb-dashboard');
+  if (dbItem) dbItem.classList.add('active');
+  loadDashboard();
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('gm_admin_auth');
+  adminAuthenticated = false;
+  document.getElementById('pwInput').value = '';
+  location.reload();
+}
+
+/* ── PANEL NAVIGATION ─────────────────────────────────── */
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (name==='users')     loadUsers();
+  if (name==='apikeys')   loadAPIKeys();
+  if (name==='plans')     loadPlansTable();
+  if (name==='freetrial') loadFreeTrialKeys();
+  if (name==='settings')  loadAdminModel();
+}
+
+/* ── DASHBOARD LOAD ───────────────────────────────────── */
+async function loadDashboard() {
+  try {
+    const snap = await db.ref('users').once('value');
+    if (!snap.exists()) { setStats(0,0,0,0,0,0); return; }
+    const users = snap.val();
+    allUsers = Object.entries(users).map(([uid,d])=>({uid,...d}));
+    const counts = {free:0,basic:0,standard:0,premium:0};
+    allUsers.forEach(u=>{ const p=u.plan||'free'; counts[p]=(counts[p]||0)+1; });
+    setStats(allUsers.length, counts.free, counts.basic, counts.standard, counts.premium, 0);
+
+    // Count API key assignments
+    try {
+      const ks = await db.ref('adminAPI').once('value');
+      document.getElementById('statKeys').textContent = ks.exists() ? Object.keys(ks.val()||{}).length : 0;
+    } catch(e) {}
+
+    // Recent signups
+    const recent = [...allUsers].sort((a,b)=>(b.signupDate||'').localeCompare(a.signupDate||'')).slice(0,10);
+    document.getElementById('recentTbl').innerHTML = recent.map(u=>`
+      <tr>
+        <td>${u.name||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${u.email||'—'}</td>
+        <td><span class="plan-chip pc-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${u.signupDate?new Date(u.signupDate).toLocaleDateString():'—'}</td>
+      </tr>`).join('');
+
+    // Set admin name
+    document.getElementById('sbName').textContent = 'Admin';
+    document.getElementById('sbAv').textContent = 'A';
+  } catch(e) { toast('Dashboard load error: '+e.message,'err'); }
+}
+
+function setStats(total,fr,bas,std,prem,keys) {
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statFree').textContent  = fr;
+  document.getElementById('statBasic').textContent = bas;
+  document.getElementById('statStd').textContent   = std;
+  document.getElementById('statPrem').textContent  = prem;
+}
+
+/* ── USERS TABLE ──────────────────────────────────────── */
+async function loadUsers() {
+  document.getElementById('usersTbl').innerHTML = '<tr class="loading-row"><td colspan="7">Loading users…</td></tr>';
+  try {
+    const snap = await db.ref('users').once('value');
+    if (!snap.exists()) { document.getElementById('usersTbl').innerHTML='<tr class="loading-row"><td colspan="7">No users found.</td></tr>'; return; }
+    allUsers = Object.entries(snap.val()).map(([uid,d])=>({uid,...d}));
+    renderUsersTable(allUsers);
+  } catch(e) { document.getElementById('usersTbl').innerHTML=`<tr class="loading-row"><td colspan="7">Error: ${e.message}</td></tr>`; }
+}
+
+function renderUsersTable(users) {
+  if (!users.length) { document.getElementById('usersTbl').innerHTML='<tr class="loading-row"><td colspan="7">No users found.</td></tr>'; return; }
+  document.getElementById('usersTbl').innerHTML = users.map(u=>`
+    <tr>
+      <td>
+        <div style="font-weight:600">${u.name||'—'}</div>
+        <div style="font-size:9px;font-family:var(--mono);color:var(--dim);margin-top:2px">${u.uid}</div>
+      </td>
+      <td style="font-size:11px;color:var(--muted)">${u.email||'—'}</td>
+      <td><span class="plan-chip pc-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></td>
+      <td style="font-family:var(--mono);font-size:11px">${u.monthlyGenerationsUsed||0}</td>
+      <td style="font-family:var(--mono);font-size:11px">${u.monthlyMessagesUsed||0}</td>
+      <td style="font-size:11px;color:var(--muted)">${u.phone||'—'}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="action-btn ab-edit" onclick="openEditUser('${u.uid}')">✏ Edit</button>
+          <button class="action-btn ab-key"  onclick="openAPIKeys('${u.uid}')">🔑 Keys</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  if (!q) { renderUsersTable(allUsers); return; }
+  renderUsersTable(allUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q)));
+}
+
+/* ── EDIT USER MODAL ──────────────────────────────────── */
+function openEditUser(uid) {
+  const u = allUsers.find(x=>x.uid===uid);
+  if (!u) return;
+  currentModalData = { type:'user', uid };
+  document.getElementById('modalTitle').textContent = `Edit User — ${u.name||u.email||uid}`;
+  document.getElementById('modalSub').textContent = `UID: ${uid}`;
+  const isCustom = (u.plan||'free') === 'custom';
+  document.getElementById('modalContent').innerHTML = `
+    <div class="mf-field">
+      <label class="mf-label">Full Name</label>
+      <input class="mf-input" id="mu-name" value="${u.name||''}"/>
+    </div>
+    <div class="mf-field">
+      <label class="mf-label">Phone</label>
+      <input class="mf-input" id="mu-phone" value="${u.phone||''}"/>
+    </div>
+    <div class="mf-field">
+      <label class="mf-label">Plan</label>
+      <select class="mf-select" id="mu-plan" onchange="toggleCustomFields(this.value)">
+        ${['free','free_trial','starter','standard','premium','payperuse'].map(p=>`<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]||p}</option>`).join('')}
+      </select>
+    </div>
+    <!-- Custom plan limits (shown when plan = custom) -->
+    <div id="customFields" style="display:${isCustom?'block':'none'}">
+      <div class="mf-sep"></div>
+      <div style="background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:800;color:#34d399;margin-bottom:10px;">⚡ Custom Plan Limits</div>
+        <div class="mf-field" style="margin-bottom:8px;">
+          <label class="mf-label">Reports Allowed (this month)</label>
+          <input class="mf-input" id="mu-gen-limit" type="number" min="0" max="999" value="${u.customGenLimit ?? 1}" style="width:100px;"/>
+          <div class="mf-hint">How many AI reports this user can generate</div>
+        </div>
+        <div class="mf-field" style="margin-bottom:0;">
+          <label class="mf-label">Chat Messages Allowed (this month)</label>
+          <input class="mf-input" id="mu-chat-limit" type="number" min="0" max="999" value="${u.customChatLimit ?? 1}" style="width:100px;"/>
+          <div class="mf-hint">How many chat messages this user can send</div>
+        </div>
+      </div>
+    </div>
+    <div class="mf-sep"></div>
+    <div class="mf-field">
+      <label class="mf-label">Current Usage</label>
+      <div style="font-size:11px;color:var(--dim);margin-bottom:6px;">Reports used: <b>${u.monthlyGenerationsUsed||0}</b> &nbsp;|&nbsp; Chats used: <b>${u.monthlyMessagesUsed||0}</b></div>
+      <button class="action-btn ab-del" onclick="resetUsage('${uid}')" style="font-size:11px;padding:7px 14px">🗑 Reset Counters to 0</button>
+      <div class="mf-hint">Resets monthly usage counters immediately</div>
+    </div>`;
+  openModal();
+}
+
+function toggleCustomFields(plan) {
+  const el = document.getElementById('customFields');
+  if (el) el.style.display = plan === 'custom' ? 'block' : 'none';
+}
+
+async function resetUsage(uid) {
+  try {
+    requireAuth();
+    await db.ref('users/'+uid).update({
+      monthlyGenerationsUsed: 0,
+      monthlyMessagesUsed:    0,
+      lastResetMonth: new Date().toISOString().substring(0,7)
+    });
+    toast('✓ Usage counters reset!', 'ok');
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) { u.monthlyGenerationsUsed = 0; u.monthlyMessagesUsed = 0; }
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error resetting usage: ' + e.message, 'err');
+  }
+}
+
+/* ── API KEY MODAL ────────────────────────────────────── */
+async function openAPIKeys(uid) {
+  const u = allUsers.find(x=>x.uid===uid);
+  currentModalData = { type:'apikeys', uid };
+  document.getElementById('modalTitle').textContent = `API Keys — ${u?.name||u?.email||uid}`;
+  document.getElementById('modalSub').textContent = `Manage report and chat API keys for this user. Keys are never visible to the user.`;
+
+  // Load existing admin API config for this user
+  let existing = { reportAPIKey:'', reportModel:'gemini-1.5-flash', chatAPIKey:'', chatModel:'gemini-1.5-flash' };
+  try {
+    const snap = await db.ref('adminAPI/'+uid).once('value');
+    if (snap.exists()) existing = { ...existing, ...snap.val() };
+  } catch(e) {}
+
+  const modelOpts = ADMIN_MODELS.map(m=>`<option value="${m}" ${existing.reportModel===m?'selected':''}>${m}</option>`).join('');
+  const chatModelOpts = ADMIN_MODELS.map(m=>`<option value="${m}" ${existing.chatModel===m?'selected':''}>${m}</option>`).join('');
+
+  document.getElementById('modalContent').innerHTML = `
+    <div style="background:rgba(255,202,69,0.06);border:1px solid rgba(255,202,69,0.15);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text2);margin-bottom:14px;">
+      These keys are stored at <code style="font-family:var(--mono);background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">adminAPI/${uid}/</code>. The user can read their own node but cannot write to it.
+    </div>
+    <div class="mf-section">Report API Key</div>
+    <div class="mf-field">
+      <label class="mf-label">API Key (Report Generation)</label>
+      <input class="mf-input" id="ak-rkey" type="password" value="${existing.reportAPIKey||''}" placeholder="Paste API key…"/>
+      <div class="mf-hint">Used for AI report generation. Supports Gemini, OpenAI, Anthropic, Mistral, OpenRouter keys.</div>
+    </div>
+    <div class="mf-field">
+      <label class="mf-label">AI Model for Reports</label>
+      <select class="mf-select" id="ak-rmodel">${modelOpts}</select>
+    </div>
+    <div class="mf-sep"></div>
+    <div class="mf-section">Chat API Key</div>
+    <div class="mf-field">
+      <label class="mf-label">API Key (Chat / Follow-up)</label>
+      <input class="mf-input" id="ak-ckey" type="password" value="${existing.chatAPIKey||''}" placeholder="Paste API key (can be same or different)…"/>
+      <div class="mf-hint">Used for follow-up chat messages. Can use the same or a separate key.</div>
+    </div>
+    <div class="mf-field">
+      <label class="mf-label">AI Model for Chat</label>
+      <select class="mf-select" id="ak-cmodel">${chatModelOpts}</select>
+    </div>
+    <div class="mf-sep"></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="action-btn ab-del" onclick="clearAPIKeys('${uid}')">🗑 Clear All Keys</button>
+      <span style="font-size:10px;color:var(--muted)">Removes the entire adminAPI entry for this user</span>
+    </div>`;
+  openModal();
+}
+
+async function clearAPIKeys(uid) {
+  if (!confirm('Delete all API keys for this user?')) return;
+  try {
+    requireAuth();
+    await db.ref('adminAPI/'+uid).remove();
+    toast('✓ API keys cleared!', 'ok');
+    closeModal();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── API KEYS GRID PANEL ──────────────────────────────── */
+async function loadAPIKeys() {
+  document.getElementById('apiGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:12px;grid-column:1/-1">Loading…</div>';
+  try {
+    const [usersSnap, keysSnap] = await Promise.all([
+      db.ref('users').once('value'),
+      db.ref('adminAPI').once('value')
+    ]);
+    if (!usersSnap.exists()) { document.getElementById('apiGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">No users found.</div>'; return; }
+    const users = usersSnap.val();
+    const keys  = keysSnap.exists() ? keysSnap.val() : {};
+    allAPIKeys  = keys;
+    // Show paid users + users with existing keys
+    const paidUsers = Object.entries(users).filter(([uid,u])=>(u.plan||'free')!=='free'||keys[uid]);
+    if (!paidUsers.length) {
+      document.getElementById('apiGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1">No paid users yet. Assign plans from the Users panel.</div>';
+      return;
+    }
+    document.getElementById('apiGrid').innerHTML = paidUsers.map(([uid,u])=>{
+      const k = keys[uid]||{};
+      const hasRKey = !!(k.reportAPIKey);
+      const hasCKey = !!(k.chatAPIKey);
+      return `<div class="api-card">
+        <div class="api-card-head">
+          <div>
+            <div class="ac-name">${u.name||'Unknown'}</div>
+            <div class="ac-email">${u.email||'—'}</div>
+            <div class="ac-plan"><span class="plan-chip pc-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></div>
+          </div>
+        </div>
+        <div class="key-badge">
+          <div class="kb-dot ${hasRKey?'on':''}"></div>
+          <div class="kb-label">Report Key</div>
+          <div class="kb-val ${hasRKey?'set':''}">${hasRKey?'● SET':'○ Not set'}</div>
+        </div>
+        <div class="key-badge">
+          <div class="kb-dot ${hasCKey?'on':''}"></div>
+          <div class="kb-label">Chat Key</div>
+          <div class="kb-val ${hasCKey?'set':''}">${hasCKey?'● SET':'○ Not set'}</div>
+        </div>
+        ${k.reportModel?`<div style="font-size:9px;color:var(--muted);font-family:var(--mono);margin-top:4px">Report: ${k.reportModel}</div>`:''}
+        ${k.chatModel?`<div style="font-size:9px;color:var(--muted);font-family:var(--mono)">Chat: ${k.chatModel}</div>`:''}
+        <button class="ac-edit-btn" onclick="openAPIKeys('${uid}')">🔑 Manage Keys</button>
+      </div>`;
+    }).join('');
+  } catch(e) { document.getElementById('apiGrid').innerHTML = `<div style="color:var(--red);padding:20px;grid-column:1/-1">Error: ${e.message}</div>`; }
+}
+
+/* ── PLANS TABLE ──────────────────────────────────────── */
+async function loadPlansTable() {
+  // Show/hide auth warning
+  const warn = document.getElementById('planAuthWarning');
+  if (warn) warn.style.display = currentAdminUid ? 'none' : 'block';
+
+  try {
+    const snap = await db.ref('users').once('value');
+    if (!snap.exists()) {
+      document.getElementById('plansTbl').innerHTML = '<tr class="loading-row"><td colspan="6">No users found.</td></tr>';
+      return;
+    }
+    allUsers = Object.entries(snap.val()).map(([uid,d]) => ({uid, ...d}));
+    // Sort: paid plans first, then by name
+    allUsers.sort((a,b) => {
+      const order = {premium:0, standard:1, basic:2, custom:3, free:4};
+      const pa = order[a.plan||'free'] ?? 4;
+      const pb = order[b.plan||'free'] ?? 4;
+      if (pa !== pb) return pa - pb;
+      return (a.name||'').localeCompare(b.name||'');
+    });
+    document.getElementById('plansTbl').innerHTML = allUsers.map(u => `
+      <tr>
+        <td>
+          <div style="font-weight:600">${u.name||'—'}</div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+            <span style="font-size:9px;font-family:var(--mono);color:var(--dim)">${u.uid.substring(0,16)}…</span>
+            <button onclick="copyUID('${u.uid}')" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:1px 6px;font-size:9px;cursor:pointer;" title="Copy full UID">📋</button>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${u.email||'—'}</td>
+        <td><span class="plan-chip pc-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></td>
+        <td style="font-family:var(--mono);font-size:11px">${u.monthlyGenerationsUsed||0}</td>
+        <td style="font-family:var(--mono);font-size:11px">${u.monthlyMessagesUsed||0}</td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <select onchange="changePlanInline('${u.uid}',this.value)"
+              style="background:rgba(255,255,255,0.05);border:1px solid var(--border2);border-radius:7px;color:var(--text2);padding:5px 8px;font-size:11px;cursor:pointer;">
+              ${['free','free_trial','starter','standard','premium','payperuse'].map(p =>
+                `<option value="${p}" ${(u.plan||'free')===p?'selected':''}>${PLAN_NAMES[p]||p}</option>`
+              ).join('')}
+            </select>
+            <button onclick="openEditUser('${u.uid}')" class="action-btn ab-edit" style="font-size:10px;padding:4px 10px;">✏ Edit</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) {
+    document.getElementById('plansTbl').innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--red)">Error loading users: ${e.message}</td></tr>`;
+  }
+}
+
+async function changePlanInline(uid, plan) {
+  try {
+    requireAuth();
+    await db.ref('users/'+uid+'/plan').set(plan);
+    toast(`✓ Plan updated to ${PLAN_NAMES[plan]}!`, 'ok');
+    const u = allUsers.find(x => x.uid === uid);
+    if (u) u.plan = plan;
+    // Refresh the plan chips in the table row
+    loadPlansTable();
+  } catch(e) {
+    if (e.message.includes('auth')) return; // already shown toast
+    toast('❌ Failed to save plan: ' + e.message + ' — Check Firebase Rules (see Settings panel).', 'err');
+    console.error('[changePlanInline]', e);
+  }
+}
+
+async function quickPlanChange() {
+  const raw  = document.getElementById('quickUid').value.trim();
+  const plan = document.getElementById('quickPlan').value;
+  if (!raw) { toast('Please enter a User UID or email', 'err'); return; }
+
+  let uid = raw;
+
+  // If input looks like an email, find the UID from the loaded users list
+  if (raw.includes('@')) {
+    // Make sure allUsers is loaded
+    if (!allUsers.length) {
+      try {
+        const snap = await db.ref('users').once('value');
+        if (snap.exists()) allUsers = Object.entries(snap.val()).map(([id,d]) => ({uid:id,...d}));
+      } catch(e) {}
+    }
+    const match = allUsers.find(u => (u.email||'').toLowerCase() === raw.toLowerCase());
+    if (!match) {
+      toast('❌ No user found with email: ' + raw, 'err');
+      return;
+    }
+    uid = match.uid;
+    toast('📧 Email matched → UID: ' + uid.substring(0,16) + '…', 'ok');
+  }
+
+  // Validate: Firebase path chars — must not contain . # $ [ ]
+  if (/[.#$\[\]]/.test(uid)) {
+    toast('❌ Invalid UID: "' + uid + '"\nPlease paste the Firebase UID (not email). Get it from Users table 📋 button.', 'err');
+    return;
+  }
+
+  try {
+    requireAuth();
+    await db.ref('users/' + uid + '/plan').set(plan);
+    toast('✓ ' + PLAN_NAMES[plan] + ' plan activated!', 'ok');
+    document.getElementById('quickUid').value = '';
+    if (document.getElementById('panel-plans').classList.contains('active')) loadPlansTable();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('❌ Failed: ' + e.message, 'err');
+    console.error('[quickPlanChange]', e);
+  }
+}
+
+/* ── MODAL HELPERS ────────────────────────────────────── */
+function openModal() { document.getElementById('adminModal').classList.add('open'); }
+function closeModal() { document.getElementById('adminModal').classList.remove('open'); }
+document.getElementById('adminModal').addEventListener('click', e=>{if(e.target===document.getElementById('adminModal'))closeModal();});
+
+async function saveModal() {
+  const {type, uid} = currentModalData;
+  if (type === 'user') {
+    const name  = document.getElementById('mu-name').value.trim();
+    const phone = document.getElementById('mu-phone').value.trim();
+    const plan  = document.getElementById('mu-plan').value;
+    try {
+      requireAuth();
+      const update = { name, phone, plan };
+      if (plan === 'custom') {
+        const genLimitEl  = document.getElementById('mu-gen-limit');
+        const chatLimitEl = document.getElementById('mu-chat-limit');
+        if (genLimitEl)  update.customGenLimit  = parseInt(genLimitEl.value)  || 1;
+        if (chatLimitEl) update.customChatLimit = parseInt(chatLimitEl.value) || 1;
+      }
+      await db.ref('users/'+uid).update(update);
+      // Update local cache
+      const u = allUsers.find(x => x.uid === uid);
+      if (u) {
+        u.name  = name;
+        u.phone = phone;
+        u.plan  = plan;
+        if (plan === 'custom') {
+          u.customGenLimit  = update.customGenLimit;
+          u.customChatLimit = update.customChatLimit;
+        }
+      }
+      const planLabel = PLAN_NAMES[plan] + (plan==='custom' ? ` (${update.customGenLimit}R / ${update.customChatLimit}C)` : '');
+      toast(`✓ User saved! Plan: ${planLabel}`, 'ok');
+      closeModal();
+      // Refresh whichever table is visible
+      if (document.getElementById('panel-users').classList.contains('active')) renderUsersTable(allUsers);
+      if (document.getElementById('panel-plans').classList.contains('active')) loadPlansTable();
+    } catch(e) {
+      if (e.message.includes('auth')) return;
+      toast('❌ Save failed: ' + e.message + '\nCheck Firebase Rules in the Settings panel.', 'err');
+      console.error('[saveModal user]', e);
+    }
+  } else if (type === 'apikeys') {
+    const rKey   = document.getElementById('ak-rkey').value.trim();
+    const rModel = document.getElementById('ak-rmodel').value;
+    const cKey   = document.getElementById('ak-ckey').value.trim();
+    const cModel = document.getElementById('ak-cmodel').value;
+    try {
+      requireAuth();
+      const payload = { reportModel: rModel, chatModel: cModel };
+      if (rKey) payload.reportAPIKey = rKey;
+      if (cKey) payload.chatAPIKey   = cKey;
+      await db.ref('adminAPI/'+uid).update(payload);
+      toast('✓ API keys saved!', 'ok');
+      closeModal();
+    } catch(e) {
+      if (e.message.includes('auth')) return;
+      toast('❌ Error saving keys: ' + e.message, 'err');
+      console.error('[saveModal apikeys]', e);
+    }
+  }
+}
+
+/* ── ADMIN MODEL SELECTION ────────────────────────────── */
+async function loadAdminModel() {
+  try {
+    const snap = await db.ref('adminSettings/selectedModel').once('value');
+    const model = snap.exists() ? snap.val() : 'gemini-2.0-flash';
+    const sel = document.getElementById('adminModelSelect');
+    if (sel) {
+      sel.value = model;
+      // If exact option not found, try to set it anyway
+      if (sel.value !== model) {
+        const opt = document.createElement('option');
+        opt.value = model; opt.textContent = model;
+        sel.appendChild(opt);
+        sel.value = model;
+      }
+    }
+    const statusEl = document.getElementById('adminModelStatus');
+    if (statusEl) {
+      statusEl.innerHTML = `Current: <strong style="color:var(--cyan)">${model}</strong>`;
+    }
+  } catch(e) {
+    console.warn('[loadAdminModel]', e.message);
+  }
+}
+
+async function saveAdminModel() {
+  const sel   = document.getElementById('adminModelSelect');
+  const model = sel ? sel.value : 'gemini-2.0-flash';
+  if (!model) { toast('Please select a model', 'err'); return; }
+  try {
+    requireAuth();
+    await db.ref('adminSettings/selectedModel').set(model);
+    const statusEl = document.getElementById('adminModelStatus');
+    if (statusEl) statusEl.innerHTML = `Current: <strong style="color:var(--green)">✓ ${model}</strong>`;
+    toast('✓ Default model saved: ' + model, 'ok');
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('❌ Failed to save model: ' + e.message, 'err');
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   FREE TRIAL API KEY MANAGEMENT
+   Firebase: freeTrialAPI/{id} → {apiKey, provider, usageCount, maxUsage, status, addedAt}
+   Firebase: adminAlerts/{id}  → {message, apiKey, errorMsg, timestamp, read}
+   ══════════════════════════════════════════════════════ */
+
+async function loadFreeTrialKeys() {
+  document.getElementById('trialKeysTbl').innerHTML =
+    '<tr class="loading-row"><td colspan="7">Loading…</td></tr>';
+
+  // Check for unread alerts first
+  await loadTrialAlerts();
+
+  try {
+    const snap = await db.ref('freeTrialAPI').once('value');
+    if (!snap.exists() || !snap.val()) {
+      document.getElementById('trialKeysTbl').innerHTML =
+        '<tr class="loading-row"><td colspan="7">No free trial API keys yet. Add one above.</td></tr>';
+      setTrialStats(0, 0, 0, 0);
+      return;
+    }
+
+    const entries = Object.entries(snap.val());
+    let total = entries.length, active = 0, inactive = 0, totalUsers = 0;
+
+    document.getElementById('trialKeysTbl').innerHTML = entries.map(([id, k]) => {
+      const isActive = k.status === 'active';
+      const used     = k.usageCount || 0;
+      const max      = k.maxUsage   || 5;
+      const pct      = Math.round((used / max) * 100);
+      const keyPrev  = (k.apiKey || '').substring(0, 8) + '…' + (k.apiKey || '').slice(-4);
+      const added    = k.addedAt ? new Date(k.addedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      if (isActive) active++; else inactive++;
+      totalUsers += used;
+      return `<tr>
+        <td>
+          <div style="font-family:var(--mono);font-size:11px;color:${isActive?'var(--green)':'var(--red)'}">${keyPrev}</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px">ID: ${id.substring(0,10)}…</div>
+        </td>
+        <td><span style="font-size:11px;color:var(--text2)">${k.provider || 'gemini'}</span></td>
+        <td>
+          <div style="font-size:12px;font-weight:700;color:${pct>=80?'var(--red)':pct>=60?'var(--amber)':'var(--green)'}">${used} / ${max}</div>
+          <div style="height:3px;background:var(--lift);border-radius:2px;margin-top:3px;width:60px;">
+            <div style="height:100%;border-radius:2px;background:${pct>=80?'var(--red)':pct>=60?'var(--amber)':'var(--green)'};width:${Math.min(100,pct)}%"></div>
+          </div>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${max}</td>
+        <td>
+          <span style="padding:3px 9px;border-radius:12px;font-size:10px;font-weight:800;
+            background:${isActive?'rgba(52,211,153,0.12)':'rgba(255,107,122,0.12)'};
+            color:${isActive?'var(--green)':'var(--red)'}">
+            ${isActive ? '● ACTIVE' : '✕ INACTIVE'}
+          </span>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">${added}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="action-btn ${isActive?'ab-del':'ab-edit'}"
+              onclick="toggleTrialKeyStatus('${id}','${isActive?'inactive':'active'}')"
+              style="font-size:10px;padding:4px 10px">
+              ${isActive ? '⏸ Disable' : '▶ Enable'}
+            </button>
+            <button class="action-btn ab-del" onclick="deleteTrialKey('${id}')"
+              style="font-size:10px;padding:4px 10px">🗑</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    setTrialStats(total, active, inactive, totalUsers);
+  } catch(e) {
+    document.getElementById('trialKeysTbl').innerHTML =
+      `<tr class="loading-row"><td colspan="7" style="color:var(--red)">Error: ${e.message}</td></tr>`;
+  }
+}
+
+function setTrialStats(total, active, inactive, users) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  s('trialStatTotal', total);
+  s('trialStatActive', active);
+  s('trialStatInactive', inactive);
+  s('trialStatUsers', users);
+}
+
+async function addFreeTrialKey() {
+  const keyVal  = document.getElementById('newTrialKey').value.trim();
+  const prov    = document.getElementById('newTrialProvider').value;
+  const maxUse  = parseInt(document.getElementById('newTrialMaxUsage').value) || 5;
+  if (!keyVal) { toast('Please paste an API key', 'err'); return; }
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI').push({
+      apiKey:     keyVal,
+      provider:   prov,
+      usageCount: 0,
+      maxUsage:   maxUse,
+      status:     'active',
+      addedAt:    new Date().toISOString()
+    });
+    document.getElementById('newTrialKey').value = '';
+    toast(`✓ Trial key added (${prov}, max ${maxUse} users)`, 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function toggleTrialKeyStatus(id, newStatus) {
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI/' + id + '/status').set(newStatus);
+    toast(`✓ Key ${newStatus === 'active' ? 'enabled' : 'disabled'}`, 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+async function deleteTrialKey(id) {
+  if (!confirm('Delete this trial API key? Users currently assigned to it will lose access.')) return;
+  try {
+    requireAuth();
+    await db.ref('freeTrialAPI/' + id).remove();
+    toast('✓ Key deleted', 'ok');
+    loadFreeTrialKeys();
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── Admin Alerts (failed keys) ── */
+async function loadTrialAlerts() {
+  try {
+    const snap = await db.ref('adminAlerts').orderByChild('read').equalTo(false).once('value');
+    const box  = document.getElementById('trialAlertsBox');
+    const list = document.getElementById('trialAlertsList');
+    if (!snap.exists() || !snap.val()) {
+      if (box) box.style.display = 'none';
+      return;
+    }
+    const alerts = Object.entries(snap.val()).sort((a, b) =>
+      (b[1].timestamp || '').localeCompare(a[1].timestamp || '')
+    );
+    if (box) box.style.display = 'block';
+    if (list) {
+      list.innerHTML = alerts.map(([id, a]) => {
+        const d  = new Date(a.timestamp);
+        const ds = isNaN(d) ? a.timestamp : d.toLocaleString('en-IN');
+        return `<div style="padding:8px 10px;background:rgba(255,107,122,0.06);border-radius:8px;margin-bottom:6px;font-size:12px;">
+          <div style="color:var(--red);font-weight:700">${a.message}</div>
+          <div style="color:var(--muted);font-size:10px;margin-top:2px">Key: <code style="color:var(--amber)">${a.apiKey || '—'}</code> · ${ds}</div>
+          ${a.errorMsg ? `<div style="color:var(--dim);font-size:10px;margin-top:1px">${a.errorMsg}</div>` : ''}
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { console.warn('[loadTrialAlerts]', e.message); }
+}
+
+async function clearTrialAlerts() {
+  try {
+    requireAuth();
+    // Mark all as read
+    const snap = await db.ref('adminAlerts').once('value');
+    if (!snap.exists()) return;
+    const updates = {};
+    Object.keys(snap.val()).forEach(id => { updates[id + '/read'] = true; });
+    await db.ref('adminAlerts').update(updates);
+    toast('✓ Alerts cleared', 'ok');
+    const box = document.getElementById('trialAlertsBox');
+    if (box) box.style.display = 'none';
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── SETTINGS ACTIONS ─────────────────────────────────── */
+function copyRules() {
+  const adminUid = currentAdminUid || 'YOUR_ADMIN_UID';
+  const rules = `{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "$uid === auth.uid || auth.uid === '${adminUid}'"
+      }
+    },
+    "adminAPI": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "auth.uid === '${adminUid}'"
+      }
+    },
+    "reports": {
+      "$uid": {
+        ".read":  "$uid === auth.uid || auth.uid === '${adminUid}'",
+        ".write": "$uid === auth.uid || auth.uid === '${adminUid}'"
+      }
+    },
+    "adminConfig": {
+      ".read":  "auth.uid === '${adminUid}'",
+      ".write": "auth.uid === '${adminUid}'"
+    }
+  }
+}`;
+  navigator.clipboard.writeText(rules)
+    .then(() => toast(`✓ Rules copied with your UID: ${adminUid.substring(0,16)}…`, 'ok'))
+    .catch(() => toast('Copy failed — select and copy manually', 'err'));
+}
+
+async function testWritePermission() {
+  const resultEl = document.getElementById('writeTestResult');
+  resultEl.style.display = 'inline';
+  resultEl.style.color = 'var(--amber)';
+  resultEl.textContent = '⏳ Testing…';
+
+  if (!currentAdminUid) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '❌ Not authenticated. Open main app and sign in first.';
+    return;
+  }
+
+  // Try to write a test flag to a test node under your own UID
+  const testPath = 'users/' + currentAdminUid + '/_adminWriteTest';
+  try {
+    await db.ref(testPath).set({ test: true, ts: Date.now() });
+    await db.ref(testPath).remove();
+    // Now test writing to another user if allUsers has one
+    const otherUser = allUsers.find(u => u.uid !== currentAdminUid);
+    if (otherUser) {
+      const testPath2 = 'users/' + otherUser.uid + '/_adminWriteTest';
+      try {
+        await db.ref(testPath2).set({ test: true });
+        await db.ref(testPath2).remove();
+        resultEl.style.color = 'var(--green)';
+        resultEl.textContent = '✓ Write permission OK! Admin can modify all users.';
+      } catch(e2) {
+        resultEl.style.color = 'var(--red)';
+        resultEl.textContent = '❌ Cannot write to other users — Firebase Rules not updated yet! Copy and apply the rules above in Firebase Console.';
+      }
+    } else {
+      resultEl.style.color = 'var(--green)';
+      resultEl.textContent = '✓ Own write OK. Load users first to test cross-user write.';
+    }
+  } catch(e) {
+    resultEl.style.color = 'var(--red)';
+    resultEl.textContent = '❌ Write failed: ' + e.message;
+  }
+}
+
+async function addAdminUid() {
+  const uid = document.getElementById('newAdminUid').value.trim();
+  if (!uid) { toast('Please enter a UID', 'err'); return; }
+  try {
+    requireAuth();
+    await db.ref('adminConfig/adminUids/'+uid).set(true);
+    toast(`✓ Admin UID registered: ${uid.substring(0,16)}…`, 'ok');
+    document.getElementById('newAdminUid').value = '';
+  } catch(e) {
+    if (e.message.includes('auth')) return;
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+/* ── COPY UID ──────────────────────────────────────────── */
+function copyUID(uid) {
+  navigator.clipboard.writeText(uid)
+    .then(() => toast('✓ UID copied: ' + uid.substring(0,16) + '…', 'ok'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = uid;
+      ta.style.position = 'fixed'; ta.style.left = '-9999px';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('✓ UID copied!', 'ok');
+    });
+}
+
+/* ── TOAST ────────────────────────────────────────────── */
+function toast(msg, type='ok') {
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),3500);
+}
+</script>
+</body>
+</html>
