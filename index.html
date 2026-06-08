@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0b1020"/>
+<title>GeoMind</title>
+<link rel="stylesheet" href="styles.css"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div id="fbErrBanner" class="banner err" hidden>⚠️ Firebase failed to load. Check your network.</div>
+
+<section id="authScreen" class="screen">
+  <div class="auth-card">
+    <h1 class="brand">🌍 GeoMind</h1>
+    <p class="muted">Sign in to continue</p>
+    <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email"/>
+    <input id="authPass"  type="password" placeholder="Password (min 6)" autocomplete="current-password"/>
+    <div class="row">
+      <button id="btnLogin"  class="btn primary">Log in</button>
+      <button id="btnSignup" class="btn">Sign up</button>
+    </div>
+    <button id="btnReset" class="btn link">Forgot password?</button>
+    <p id="authMsg" class="msg"></p>
+  </div>
+</section>
+
+<section id="appScreen" class="screen" hidden>
+  <header class="topbar">
+    <div class="brand-sm">🌍 GeoMind</div>
+    <nav class="tabs">
+      <button data-tab="ask"      class="tab active">Ask</button>
+      <button data-tab="chat"     class="tab">Chat</button>
+      <button data-tab="compare"  class="tab">Compare</button>
+      <button data-tab="history"  class="tab">History</button>
+      <button data-tab="plan"     class="tab">Plan</button>
+      <button data-tab="settings" class="tab">Settings</button>
+    </nav>
+    <div class="user-chip">
+      <span id="userName">—</span>
+      <button id="btnLogout" class="btn ghost sm">Logout</button>
+    </div>
+  </header>
+
+  <div id="usageWidget" class="usage-widget"></div>
+
+  <main id="tab-ask" class="tab-panel active">
+    <h2>Ask GeoMind</h2>
+    <p class="muted">Generate a detailed UPSC-style report on any topic.</p>
+    <textarea id="askInput" rows="4" placeholder="e.g. Indus Water Treaty — recent developments"></textarea>
+    <div class="row">
+      <select id="askLang"><option value="en">English</option><option value="hi">हिन्दी</option></select>
+      <button id="btnAsk" class="btn primary">Generate Report</button>
+      <button id="btnDownload" class="btn" hidden>Download .docx</button>
+    </div>
+    <div id="askOut" class="output"></div>
+  </main>
+
+  <main id="tab-chat" class="tab-panel" hidden>
+    <h2>Chat</h2>
+    <div id="chatLog" class="chat-log"></div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="Ask anything..."/>
+      <button id="btnChat" class="btn primary">Send</button>
+    </div>
+  </main>
+
+  <main id="tab-compare" class="tab-panel" hidden>
+    <h2>Compare Two Topics</h2>
+    <input id="cmpA" placeholder="Topic A"/>
+    <input id="cmpB" placeholder="Topic B"/>
+    <button id="btnCompare" class="btn primary">Compare</button>
+    <div id="cmpOut" class="output"></div>
+  </main>
+
+  <main id="tab-history" class="tab-panel" hidden>
+    <h2>History</h2>
+    <div id="historyList"></div>
+  </main>
+
+  <main id="tab-plan" class="tab-panel" hidden>
+    <h2>Your Plan</h2>
+    <div id="planInfo"></div>
+    <h3>Available plans</h3>
+    <div id="planGrid" class="plan-grid"></div>
+  </main>
+
+  <main id="tab-settings" class="tab-panel" hidden>
+    <h2>Settings</h2>
+    <label>Display name</label><input id="setName"/>
+    <label>Preferred AI model</label>
+    <select id="setModel"></select>
+    <p id="modelDesc" class="muted small"></p>
+    <label>Your own API key (optional — bypasses plan limits)</label>
+    <input id="setKey" type="password" placeholder="sk-... or AIza..."/>
+    <p class="muted small">Stored only in your account. Leave blank to use shared admin keys.</p>
+    <button id="btnSaveSettings" class="btn primary">Save</button>
+    <hr/>
+    <button id="btnExport" class="btn">Export my data</button>
+    <button id="btnDelete" class="btn danger">Delete my account</button>
+  </main>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
