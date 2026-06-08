@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="GeoMind — AI-powered interactive educational map platform for exam preparation"/>
+<meta name="theme-color" content="#04060e"/>
+<title>GeoMind — AI Geo-Intelligence Platform</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"/>
+
+<!-- Map CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+
+<!-- GeoMind Styles -->
+<link rel="stylesheet" href="geostyle.css"/>
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="authScreen">
+  <!-- Firebase load failure warning -->
+  <div id="fbErrBanner" style="display:none;position:fixed;top:0;left:0;right:0;
+       background:#ff3b30;color:#fff;font-size:12px;font-weight:700;
+       text-align:center;padding:10px 16px;z-index:99999;line-height:1.4;">
+    ⚠️ Could not connect to authentication servers.<br>
+    Please check your internet connection and reload the page.
+  </div>
+  <!-- LOGIN CARD -->
+  <div id="loginCard" class="auth-card">
+
+    <!-- Logo + Branding -->
+    <div class="auth-brand">
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="auth-logo-img"/>
+      <div class="auth-brand-name">GeoMind</div>
+      <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
+    </div>
+
+    <!-- Heading -->
+    <div class="auth-heading">
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to continue your learning journey</div>
+    </div>
+
+    <!-- Fields -->
+    <div class="afield">
+      <label for="lemail">Email Address</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">✉</span>
+        <input type="email" id="lemail" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="lpwd">Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="lpwd" placeholder="Your password" autocomplete="current-password"/>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="aerr" id="lerr"></div>
+    <div class="aok"  id="lok"></div>
+
+    <!-- Sign In Button -->
+    <button class="abtn" id="lbtn" onclick="doLogin()">
+      Sign In →
+    </button>
+
+    <!-- Divider -->
+    <div class="adiv"><span>or</span></div>
+
+    <!-- Switch to Signup -->
+    <button class="alink" onclick="showCard('signup')">
+      Don't have an account? <strong>Create one free</strong>
+    </button>
+  </div>
+
+  <!-- SIGNUP CARD -->
+  <div id="signupCard" class="auth-card" style="display:none">
+
+    <!-- Logo + Branding -->
+    <div class="auth-brand">
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="auth-logo-img"/>
+      <div class="auth-brand-name">GeoMind</div>
+      <div class="auth-brand-tag">AI Geo-Intelligence Platform</div>
+    </div>
+
+    <!-- Heading -->
+    <div class="auth-heading">
+      <div class="auth-title">Create your account</div>
+      <div class="auth-sub">Start exploring the world with AI — it's free</div>
+    </div>
+
+    <!-- Fields -->
+    <div class="afield">
+      <label for="sname">Full Name</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">👤</span>
+        <input type="text" id="sname" placeholder="Your full name" autocomplete="name"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="semail">Email Address</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">✉</span>
+        <input type="email" id="semail" placeholder="you@email.com" autocomplete="email"/>
+      </div>
+    </div>
+    <div class="afield">
+      <label for="spwd">Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="spwd" placeholder="Min 8 characters" oninput="chkPwd(this.value)" autocomplete="new-password"/>
+      </div>
+      <div class="pwd-bar" id="pwdBar"></div>
+      <div class="pwd-hint">Use 8+ characters with letters and numbers</div>
+    </div>
+    <div class="afield">
+      <label for="scpwd">Confirm Password</label>
+      <div class="ainput-wrap">
+        <span class="ainput-icon">🔒</span>
+        <input type="password" id="scpwd" placeholder="Repeat password" autocomplete="new-password"/>
+      </div>
+    </div>
+
+    <!-- Two-column row -->
+    <div class="afield-row">
+      <div class="afield afield-half">
+        <label for="scls">Class / Level</label>
+        <select id="scls">
+          <option value="Competitive">Competitive</option>
+          <option value="Class 11-12">Class 11–12</option>
+          <option value="Class 9-10">Class 9–10</option>
+          <option value="Class 6-8">Class 6–8</option>
+        </select>
+      </div>
+      <div class="afield afield-half">
+        <label for="sexam">Target Exam</label>
+        <select id="sexam">
+          <option value="UPSC">UPSC</option>
+          <option value="SSC">SSC</option>
+          <option value="State PCS">State PCS</option>
+          <option value="NEET">NEET</option>
+          <option value="JEE">JEE</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="aerr" id="serr"></div>
+    <div class="aok"  id="sok"></div>
+
+    <!-- Create Account Button -->
+    <button class="abtn" id="sbtn" onclick="doSignup()">
+      Create Free Account →
+    </button>
+
+    <!-- Divider -->
+    <div class="adiv"><span>or</span></div>
+
+    <!-- Switch to Login -->
+    <button class="alink alink-g" onclick="showCard('login')">
+      Already have an account? <strong>Sign in</strong>
+    </button>
+  </div>
+</div>
+
+<!-- ══ APP SCREEN ══ -->
+<div id="appScreen">
+
+  <!-- TOP NAV -->
+  <div id="topNav">
+    <div class="nav-logo" onclick="goPage('map')">
+      <img src="https://drive.google.com/thumbnail?id=1AnTtMvU_F5Ti3PYGRliJ1N0NJfsm4xEE&sz=w400" alt="GeoMind" class="nav-logo-img"/>
+      <div class="nav-logo-name">GeoMind</div>
+    </div>
+    <div class="page-tabs">
+      <button class="page-tab active" id="pt-map"      onclick="goPage('map')">🗺 Map</button>
+      <button class="page-tab"        id="pt-compare"  onclick="goPage('compare')">⚖ Compare</button>
+      <button class="page-tab"        id="pt-history"  onclick="goPage('history')">📋 History</button>
+      <button class="page-tab"        id="pt-plans"    onclick="goPage('plans')">⭐ Plans</button>
+      <button class="page-tab"        id="pt-profile"  onclick="goPage('profile')">👤 Profile</button>
+      <button class="page-tab"        id="pt-settings" onclick="goPage('settings')">⚙ Settings</button>
+      <button class="page-tab admin-tab" id="pt-admin" onclick="goAdminDash()">🔐 Admin</button>
+    </div>
+    <div class="nav-right">
+      <span class="usage-mini" id="usageMini"></span>
+      <span class="plan-badge pb-free" id="planBadge">FREE</span>
+      <div class="user-chip">
+        <div class="user-av" id="userAv">?</div>
+        <div class="user-nm" id="userNm">User</div>
+      </div>
+      <button class="nvbtn" onclick="doLogout()"><span class="nvbtn-logout-text">Logout</span> ↩</button>
+    </div>
+  </div>
+
+  <!-- MOBILE NAV BAR -->
+  <div id="mobileBar">
+    <button class="mob-tab active" id="mpt-map"      onclick="goPage('map')">🗺 Map</button>
+    <button class="mob-tab"        id="mpt-compare"  onclick="goPage('compare')">⚖ Compare</button>
+    <button class="mob-tab"        id="mpt-history"  onclick="goPage('history')">📋 History</button>
+    <button class="mob-tab"        id="mpt-plans"    onclick="goPage('plans')">⭐ Plans</button>
+    <button class="mob-tab"        id="mpt-profile"  onclick="goPage('profile')">👤 Profile</button>
+    <button class="mob-tab"        id="mpt-settings" onclick="goPage('settings')">⚙ Settings</button>
+    <button class="mob-tab admin-mob" id="mpt-admin" onclick="goAdminDash()">🔐 Admin</button>
+  </div>
+
+  <!-- ══ PAGE: MAP ══ -->
+  <div class="page active" id="mapPage">
+    <div id="mainWrap">
+      <div id="mapPanel">
+        <div class="map-controls-bar">
+          <div class="nc-group"><label>Class</label>
+            <select class="nsel" id="classLevel">
+              <option value="Competitive">Competitive</option>
+              <option value="Class 6-8">6-8</option>
+              <option value="Class 9-10">9-10</option>
+              <option value="Class 11-12">11-12</option>
+            </select>
+          </div>
+          <div class="nc-group"><label>Exam</label>
+            <select class="nsel" id="examType">
+              <option value="UPSC">UPSC</option>
+              <option value="SSC">SSC</option>
+              <option value="State PCS">PCS</option>
+              <option value="NEET">NEET</option>
+              <option value="JEE">JEE</option>
+              <option value="General">General</option>
+            </select>
+          </div>
+          <div class="nc-group"><label>Mode</label>
+            <select class="nsel" id="learningMode">
+              <option value="Full Analysis">Full Analysis</option>
+              <option value="Quick Summary">Quick Summary</option>
+              <option value="Quiz Mode">Quiz Mode</option>
+              <option value="Timeline Mode">Timeline Mode</option>
+            </select>
+          </div>
+          <select id="langPick" class="nsel" onchange="applyLang(this.value)">
+            <option value="en">🌐 English</option>
+            <option value="hi">🇮🇳 Hindi</option>
+            <option value="fr">🇫🇷 French</option>
+            <option value="ar">🇸🇦 Arabic</option>
+          </select>
+        </div>
+        <div id="map"></div>
+        <div id="cpill"></div>
+        <div id="famBar"></div>
+        <div id="ptip">
+          <div id="ptName"></div>
+          <div id="ptLoc"></div>
+          <div id="ptLang"></div>
+        </div>
+        <div class="send-bar">
+          <div class="mc-group mc-country">
+            <label>Country / Region</label>
+            <input type="text" id="countryInput" placeholder="Auto-detected…"/>
+          </div>
+          <div class="mc-group mc-question">
+            <label>Focus Question (Optional)</label>
+            <input type="text" id="userQuestion" placeholder="e.g. Why is this area important for UPSC?"/>
+          </div>
+          <button id="sendBtn" onclick="handleSend()">⚡ Send Report</button>
+        </div>
+      </div>
+
+      <!-- ══ MAP/REPORT RESIZE SLIDER ══ -->
+      <div id="mapSlider" class="map-slider" title="Drag to resize">
+        <div class="map-slider-handle"><div class="map-slider-dots"></div></div>
+      </div>
+      <div id="rightPanel">
+        <div class="tabs">
+          <button class="tab on" id="t-a" onclick="goTab('a',this)">📊 Analysis</button>
+          <button class="tab ht"  id="t-h" onclick="goTab('h',this)">📋 History</button>
+          <button class="tab ct"  id="t-c" onclick="goTab('c',this)">💬 Chat</button>
+          <button class="tab pt"  id="t-p" onclick="goTab('p',this)">⭐ Plans</button>
+        </div>
+        <div class="tpanel on" id="tp-a">
+          <div class="scroll">
+          <div id="idleBox" class="idle">
+              <div class="idle-icon">🌍</div>
+              <h3 id="i-title">Click map, then Send Report</h3>
+              <p id="i-desc">GeoMind generates AI-powered exam-ready reports on geography, history, agriculture &amp; economy.</p>
+              <div class="idle-status-row">
+                <span class="status-dot"></span>
+                <span class="status-text">AI Engine Online</span>
+              </div>
+              <div class="usage-widget">
+                <div class="uw-title">📊 Monthly Usage</div>
+                <div id="uwContent"></div>
+              </div>
+            </div>
+            <div class="loadbox" id="loadbox">
+              <div class="spin-lg"></div>
+              <div class="lstep" id="lstep">Initializing…</div>
+              <div class="pbar"><div class="pfill" id="pfill"></div></div>
+            </div>
+            <div class="result-wrap" id="resultWrap"></div>
+          </div>
+        </div>
+        <div class="tpanel" id="tp-h">
+          <div class="scroll"><div id="hcontent"></div></div>
+        </div>
+        <div class="tpanel" id="tp-c">
+          <div class="cmsgs" id="cmsgs">
+            <div class="cnoloc" id="cnoloc">💬 Click a map location first, then ask follow-up questions here.</div>
+          </div>
+          <div class="cbar">
+            <input type="text" id="cinput" placeholder="Ask about this location…"/>
+            <button class="sbtn" id="chatSendBtn" onclick="sendChat()">Send</button>
+          </div>
+        </div>
+        <div class="tpanel" id="tp-p">
+          <div class="scroll"><div id="pricingContent"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: HISTORY ══ -->
+  <div class="page" id="historyPage">
+    <!-- Header -->
+    <div class="hist-header">
+      <div>
+        <h2>📋 History</h2>
+        <p>Revisit past reports, comparisons &amp; chats — stored results open instantly without AI calls</p>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div class="hist-tabs" style="padding:12px 20px 0;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+      <button class="hist-tab active" id="htab-reports"  onclick="switchHistTab('reports')">📊 Reports</button>
+      <button class="hist-tab"        id="htab-compare"  onclick="switchHistTab('compare')">⚖ Comparisons</button>
+      <button class="hist-tab"        id="htab-chat"     onclick="switchHistTab('chat')">💬 Chats</button>
+    </div>
+    <!-- Tab panels — all start hidden, JS controls display -->
+    <div class="hcontent" id="historyPageContent" style="display:block;">
+      <div class="hempty"><div class="hempty-icon">📊</div><p>Loading your reports…</p></div>
+    </div>
+    <div class="hcontent" id="historyCompareContent" style="display:none;">
+      <div class="hempty"><div class="hempty-icon">⚖</div><p>Loading comparison history…</p></div>
+    </div>
+    <div class="hcontent" id="historyChatContent" style="display:none;">
+      <div class="hempty"><div class="hempty-icon">💬</div><p>Loading chat history…</p></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: PLANS ══ -->
+  <div class="page" id="plansPage">
+    <div class="plans-scroll" id="plansPageContent"></div>
+  </div>
+
+  <!-- ══ PAGE: PROFILE ══ -->
+  <div class="page" id="profilePage">
+    <div class="profile-scroll">
+      <div class="profile-avatar-section">
+        <div class="profile-av-wrap" onclick="document.getElementById('pfPhotoInput').click()">
+          <div class="profile-av-big" id="profileAvBig">?</div>
+          <div class="profile-av-overlay">📷</div>
+        </div>
+        <input type="file" id="pfPhotoInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)"/>
+        <div class="profile-user-name" id="profileName" style="margin-top:12px;font-size:18px;font-weight:800;color:var(--text)">Loading…</div>
+        <div class="profile-user-email" id="profileEmail" style="margin-top:4px;font-size:12px;color:var(--muted);word-break:break-all"></div>
+        <div class="profile-upload-hint" style="margin-top:8px;font-size:10px;color:var(--dim)">Tap avatar to change photo</div>
+        <div class="profile-upload-progress" id="profileUploadProgress">
+          <div class="profile-upload-progress-fill" id="profileUploadFill"></div>
+        </div>
+      </div>
+      <!-- Progress Stats -->
+      <div class="profile-section">
+        <h3>📊 Learning Progress</h3>
+        <div class="progress-grid" id="progressGrid">
+          <div class="stat-card"><div class="stat-num" id="statReports">0</div><div class="stat-label">Total Reports</div></div>
+          <div class="stat-card"><div class="stat-num" id="statLocations">0</div><div class="stat-label">Locations Explored</div></div>
+          <div class="stat-card"><div class="stat-num" id="statChats">0</div><div class="stat-label">Chat Messages</div></div>
+          <div class="stat-card"><div class="stat-num" id="statCountries">0</div><div class="stat-label">Countries</div></div>
+          <div class="stat-card"><div class="stat-num" id="statComparisons">0</div><div class="stat-label">Comparisons Done</div></div>
+        </div>
+        <!-- Plan Usage Breakdown -->
+        <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:11px;padding:14px;margin-top:10px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:10px;">Plan Usage Breakdown</div>
+          <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">📊 Total Reports (Lifetime)</span>
+              <span id="statReportsTotal" style="font-family:var(--ff-mono);color:var(--cyan);font-weight:700">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">📅 This Month</span>
+              <span id="statMonthly" style="font-family:var(--ff-mono);color:var(--green);font-weight:700">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">⭐ Plan Usage (since activation)</span>
+              <span id="statPlanUsed" style="font-family:var(--ff-mono);color:var(--amber);font-weight:700">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+              <span style="color:var(--text2)">⚖ Comparisons (this plan)</span>
+              <span id="statCompareUsed" style="font-family:var(--ff-mono);color:var(--purple);font-weight:700">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Current Plan -->
+      <div class="profile-section">
+        <h3>Current Plan</h3>
+        <div class="plan-info-card">
+          <div class="plan-info-left">
+            <div class="plan-lbl">Active Plan</div>
+            <div class="plan-val" id="profilePlanVal">Free</div>
+          </div>
+          <button class="plan-btn pb-premium-btn" style="width:auto;padding:8px 18px" onclick="goPage('plans')">Upgrade ⭐</button>
+        </div>
+      </div>
+      <!-- Edit Profile -->
+      <div class="profile-section">
+        <h3>✏️ Edit Profile</h3>
+        <div class="pf-field">
+          <label>Full Name</label>
+          <input type="text" id="pfName" placeholder="Your full name" autocomplete="name"/>
+        </div>
+        <div class="pf-field">
+          <label>Email</label>
+          <input type="email" id="pfEmail" placeholder="your@email.com" readonly/>
+        </div>
+        <div class="pf-field">
+          <label>Phone Number</label>
+          <input type="tel" id="pfPhone" placeholder="+91 00000 00000" autocomplete="tel"/>
+        </div>
+        <button class="save-btn" onclick="saveProfile()">💾 Save Changes</button>
+      </div>
+      <!-- Password Change -->
+      <div class="profile-section">
+        <h3>🔒 Change Password</h3>
+        <div class="pf-field">
+          <label>Current Password</label>
+          <input type="password" id="pwdCurrent" placeholder="Your current password"/>
+        </div>
+        <div class="pf-field">
+          <label>New Password</label>
+          <input type="password" id="pwdNew" placeholder="At least 8 characters"/>
+        </div>
+        <div class="pf-field">
+          <label>Confirm New Password</label>
+          <input type="password" id="pwdConfirm" placeholder="Repeat new password"/>
+        </div>
+        <div class="pwd-feedback" id="pwdFeedback"></div>
+        <button class="save-btn" style="background:linear-gradient(135deg,var(--purple),var(--blue))" onclick="changePassword()">🔑 Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: COMPARE ══ -->
+  <div class="page" id="comparePage">
+    <div class="compare-scroll">
+      <div class="page-header" style="padding:0 0 14px">
+        <h2>⚖ Location Comparison</h2>
+        <p>Tap directly on each map below to pick two locations, then compare</p>
+      </div>
+
+      <!-- ── Sticky action bar ABOVE the maps ── -->
+      <div class="cmp-action-bar">
+        <button id="compareRunBtn" onclick="runComparison()" disabled>⚖ Generate Comparison Report</button>
+        <div class="cmp-clear-row">
+          <button class="cmp-clear-btn" onclick="clearComparePin('A')">✕ Clear A</button>
+          <button class="cmp-clear-btn" onclick="clearComparePin('B')">✕ Clear B</button>
+        </div>
+      </div>
+
+      <!-- ── Two mini-maps side by side ── -->
+      <div class="cmp-maps-row">
+
+        <!-- Location A map -->
+        <div class="cmp-map-card" id="cmpCardA">
+          <div class="cmp-map-label cmp-label-a">📍 Location A</div>
+          <div class="cmp-map-hint" id="cmpHintA">Tap map to select</div>
+          <div class="cmp-map-name" id="cmpNameA"></div>
+          <div id="cmpMapA" class="cmp-mini-map"></div>
+          <div class="cmp-map-status" id="cmpStatusA">
+            <span class="cmp-status-dot cmp-dot-a"></span>
+            <span id="cmpStatusTextA">Not selected</span>
+          </div>
+        </div>
+
+        <!-- VS divider -->
+        <div class="cmp-vs-badge">VS</div>
+
+        <!-- Location B map -->
+        <div class="cmp-map-card" id="cmpCardB">
+          <div class="cmp-map-label cmp-label-b">📍 Location B</div>
+          <div class="cmp-map-hint" id="cmpHintB">Tap map to select</div>
+          <div class="cmp-map-name" id="cmpNameB"></div>
+          <div id="cmpMapB" class="cmp-mini-map"></div>
+          <div class="cmp-map-status" id="cmpStatusB">
+            <span class="cmp-status-dot cmp-dot-b"></span>
+            <span id="cmpStatusTextB">Not selected</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="compareLoad" class="compare-load" style="display:none">
+        <div class="spin-lg"></div>
+        <div class="lstep" id="cmpStep">Initializing…</div>
+        <div class="pbar"><div class="pfill" id="cmpPfill"></div></div>
+      </div>
+      <div id="compareResult" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE: SETTINGS ══ -->
+  <div class="page" id="settingsPage">
+    <div class="settings-scroll">
+      <div class="page-header" style="padding:0 0 20px">
+        <h2>⚙ Settings</h2>
+        <p>Configure your AI model and API access</p>
+      </div>
+      <div class="settings-section" id="aiConfigSection" style="display:none">
+        <h3>🤖 AI Configuration</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.6">Connect your own API key (free plan), or your admin-assigned key will be used automatically on paid plans.</p>
+        <div class="sf-field">
+          <label>Your API Key</label>
+          <input type="password" id="settingsApiKey" placeholder="Paste your API key here…" autocomplete="off"/>
+        </div>
+        <div class="sf-field">
+          <label>AI Model</label>
+          <select id="settingsModel" onchange="showModelDesc()"></select>
+          <div class="model-desc" id="modelDesc">Fast and efficient — great for most reports.</div>
+        </div>
+        <div id="apiStatusBox" class="api-status no-key">
+          <span class="dot"></span>
+          <span id="apiStatusText">No API key configured. Add your key above or purchase a plan.</span>
+        </div>
+        <div class="info-box">
+          <strong>Free Plan:</strong> Add your own API key. Supports Gemini, ChatGPT / OpenAI, Anthropic, Z.ai, Mistral, and OpenRouter models.<br><br>
+          <strong>Paid Plans:</strong> Admin-managed API keys are assigned — no key needed from you. Model overrides apply.
+        </div>
+        <button class="save-btn" style="margin-top:16px" onclick="saveSettings()">💾 Save Settings</button>
+      </div>
+      <div class="settings-section">
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <div class="info-box" style="font-size:12px;line-height:2.2">
+          <strong>Alt + 1</strong> — Map &nbsp;|&nbsp; <strong>Alt + 2</strong> — Compare &nbsp;|&nbsp; <strong>Alt + 3</strong> — History<br>
+          <strong>Alt + 4</strong> — Plans &nbsp;|&nbsp; <strong>Alt + 5</strong> — Profile &nbsp;|&nbsp; <strong>Alt + 6</strong> — Settings
+        </div>
+      </div>
+      <div class="settings-section" style="border-color:rgba(255,107,122,0.2);">
+        <h3 style="color:var(--red)">⚠️ Danger Zone</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Permanently delete your data from GeoMind.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button onclick="clearHistory(true)" class="danger-btn">🗑 Clear My History</button>
+          <button onclick="deleteAccount()" class="danger-btn" style="background:rgba(255,60,60,0.12);border-color:rgba(255,60,60,0.35);color:#ff4444;">
+            💀 Delete My Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div id="footer">
+    <div class="footer-status">
+      <span class="footer-dot"></span>
+      <span class="footer-label">Online</span>
+    </div>
+    <div class="footer-copy">GeoMind v5.2 · AI Geo-Intelligence Platform · <span>© 2025</span></div>
+    <div style="font-size:9px;color:var(--dim);">OpenStreetMap · Firebase · Wikipedia</div>
+  </div>
+</div>
+
+<!-- Plan upgrade modal -->
+<div id="planModal" style="display:none">
+  <div class="modal-card" style="max-width:420px;max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closePlanModal()">✕</button>
+    <h3 id="modalTitle">Upgrade Plan</h3>
+    <p id="modalBody" style="font-size:12px;color:var(--muted);margin:8px 0 14px"></p>
+    <div style="text-align:center;margin:10px 0;">
+      <img src="" alt="UPI QR" id="modalQR" style="width:140px;height:140px;border-radius:10px;border:2px solid var(--border2);display:none;"/>
+    </div>
+    <div class="pay-step"><div class="pay-num">1</div><div class="pay-text">Scan the QR code or send payment to:<br><span class="pay-number" style="font-size:13px;margin:4px 0;">dhamijamonu79@oksbi</span></div></div>
+    <div class="pay-step"><div class="pay-num">2</div><div class="pay-text">Fill the <strong><a href="https://docs.google.com/forms/d/e/1FAIpQLSdnJDBF-I2v42KemUIkIlAt9llKqulPVXw0C5e88Ke6S5ZsRA/viewform" target="_blank" style="color:var(--cyan)">Google Form ↗</a></strong> with your name, email, plan &amp; payment screenshot.</div></div>
+    <div class="pay-step"><div class="pay-num">3</div><div class="pay-text">Admin reviews and activates your plan within <strong>7 days</strong>.</div></div>
+    <button onclick="closePlanModal()" style="margin-top:16px;width:100%;padding:11px;background:var(--lift);border:1px solid var(--border2);color:var(--text2);border-radius:9px;font-weight:700;">Close</button>
+  </div>
+</div>
+
+<!-- Comparison History Modal -->
+<div id="compareHistModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);z-index:10002;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;">
+    <div id="chmTitle" style="font-weight:800;font-size:15px;color:var(--text)">⚖ Comparison</div>
+    <button onclick="closeCompareHistModal()" style="background:rgba(255,255,255,0.07);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;">✕</button>
+  </div>
+  <div id="chmBody" style="flex:1;overflow-y:auto;padding:14px;"></div>
+</div>
+
+<!-- Report Preview Modal -->
+<div id="reportModal" style="display:none">
+  <div class="rmodal-header">
+    <div class="rmodal-title" id="rmodalTitle">📊 Report</div>
+    <div class="rmodal-actions">
+      <button class="rmodal-goto" onclick="reportModalGoMap()">🗺 Open on Map</button>
+      <button class="rmodal-close" onclick="closeReportModal()">✕</button>
+    </div>
+  </div>
+  <div class="rmodal-body" id="rmodalBody"></div>
+</div>
+
+<!-- Offline Banner (controlled by JS setupOfflineMode) -->
+<div id="offlineBanner" style="display:none">📶 Offline Mode — Showing previously saved report</div>
+
+<!-- ══ EXTERNAL LIBRARIES ══ -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.2.2/docx.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- ══ GEOMIND APPLICATION SCRIPT ══ -->
+<script src="geojavascript.js"></script>
+
+<!-- ══ MICRO-INTERACTIONS (Section 10) ══ -->
+<script>
+(function(){
+  // ── Ripple Effect on buttons ──────────────────
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button, .abtn, .plan-btn, .hist-tab, .mob-tab, .page-tab');
+    if(!btn) return;
+    const r = document.createElement('span');
+    r.className = 'ripple-wave';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+    btn.classList.add('ripple-host');
+    btn.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+  });
+
+  // ── Animate usage bars on load ────────────────
+  function animateBars(){
+    document.querySelectorAll('.uw-bar-fill').forEach(bar => {
+      const w = bar.style.width;
+      if(w && w !== '0%'){
+        bar.style.setProperty('--target-w', w);
+        bar.style.width = '0%';
+        requestAnimationFrame(() => {
+          setTimeout(() => { bar.style.width = w; }, 80);
+        });
+      }
+    });
+  }
+  // Watch for usage widget DOM changes
+  const obs = new MutationObserver(animateBars);
+  const uw = document.getElementById('uwContent');
+  if(uw) obs.observe(uw, {childList:true, subtree:true});
+
+  // ── Smooth page transition classes ───────────
+  document.querySelectorAll('.page').forEach(p => {
+    const orig = p.style.display;
+    if(orig === 'flex') p.classList.add('fade-in-up');
+  });
+})();
+</script>
+</body>
+</html>
